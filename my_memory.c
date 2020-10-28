@@ -1,6 +1,9 @@
 // Include files
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <unistd.h>
+
 #define  N_OBJS_PER_SLAB  64
 
 // Functional prototypes
@@ -19,13 +22,14 @@ enum status
 //node implementation for the binary tree
 struct node
 {
-    enum status;
+    int status;
     struct node *left;
     struct node *right;
 };
 
-int malloc_type;
-
+int glob_malloc_type;
+int glob_mem_size;
+void * glob_start_of_memory;
 ////////////////////////////////////////////////////////////////////////////
 //
 // Function     : setup
@@ -36,6 +40,19 @@ int malloc_type;
 //                (1) Slab Allocation
 
 void setup( int malloc_type, int mem_size, void* start_of_memory )
+{
+	glob_malloc_type = malloc_type;
+	glob_mem_size = mem_size;
+	glob_start_of_memory = start_of_memory;
+}
+
+
+void *buddy(int size)
+{
+
+}
+
+void *slab(int size)
 {
 
 }
@@ -50,12 +67,15 @@ void setup( int malloc_type, int mem_size, void* start_of_memory )
 
 void *my_malloc( int size )
 {
-    //local variables
-    void *allocated_address;
+	if( glob_malloc_type == 0) {buddy(size);}
+	else {slab(size);}
+
+	//local variables
+	void *allocated_address;
     
-    allocated_address = sbrk(size);
-    
-    if(allocated_address == -1){printf("%s", "allocation error when sbrk was used");}
+    	allocated_address = sbrk(size);
+    	printf("%d",allocated_address);
+    	if(*((int*)allocated_address) == -1){printf("%s", "allocation error when sbrk was used");}
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -68,5 +88,5 @@ void *my_malloc( int size )
 
 void my_free( void *ptr )
 {
-
+	//free(mylifeaway)
 }
