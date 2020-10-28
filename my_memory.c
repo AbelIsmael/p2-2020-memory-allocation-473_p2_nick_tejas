@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <unistd.h>
-
 #define  N_OBJS_PER_SLAB  64
 
 // Functional prototypes
@@ -22,20 +20,24 @@ enum status
 //node implementation for the binary tree
 struct node
 {
+	int mem_size;
     int status;
+	int *stack_pointer;
     struct node *left;
     struct node *right;
 };
 
 /* newNode() allocates a new node with the given data and NULL left and  
 right pointers. */
-struct node* newNode(int data)//change parameters later 
+struct node* newNode(int memSize, int status, int *stackPointer)//change parameters later 
 { 
 // Allocate memory for new node  
 struct node* node = (struct node*)malloc(sizeof(struct node)); 
   
 // Assign data to this node 
-node->data = data; //more stuff here too
+node->mem_size = memSize; //more stuff here too
+node->status = status
+node->stack_pointer = stackPointer;
   
 // Initialize left and right children as NULL 
 node->left = NULL; 
