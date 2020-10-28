@@ -27,6 +27,22 @@ struct node
     struct node *right;
 };
 
+/* newNode() allocates a new node with the given data and NULL left and  
+right pointers. */
+struct node* newNode(int data)//change parameters later 
+{ 
+// Allocate memory for new node  
+struct node* node = (struct node*)malloc(sizeof(struct node)); 
+  
+// Assign data to this node 
+node->data = data; //more stuff here too
+  
+// Initialize left and right children as NULL 
+node->left = NULL; 
+node->right = NULL; 
+return(node); 
+} 
+
 int glob_malloc_type;
 int glob_mem_size;
 void * glob_start_of_memory;
@@ -72,7 +88,7 @@ void *my_malloc( int size )
 
 	//local variables
 	void *allocated_address;
-    
+        printf("%d",allocated_address);
     	allocated_address = sbrk(size);
     	printf("%d",allocated_address);
     	if(*((int*)allocated_address) == -1){printf("%s", "allocation error when sbrk was used");}
