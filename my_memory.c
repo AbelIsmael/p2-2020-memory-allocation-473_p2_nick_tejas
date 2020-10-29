@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <math.h> // addded for log function
+
 #define  N_OBJS_PER_SLAB  64
 
 // Functional prototypes
@@ -29,15 +31,15 @@ struct node
 
 /* newNode() allocates a new node with the given data and NULL left and  
 right pointers. */
-struct node* newNode(int memSize, int status, int *stackPointer)//change parameters later 
+struct node* newNode(int memSize, int status, int *stackPointer, struct node *parent)//change parameters later 
 { 
-// Allocate memory for new node  
-struct node* node = (struct node*)malloc(sizeof(struct node)); 
+	// Allocate memory for new node  
+	struct node* node = (struct node*)malloc(sizeof(struct node)); 
   
-// Assign data to this node 
-node->mem_size = memSize; //more stuff here too
-node->status = status
-node->stack_pointer = stackPointer;
+	// Assign data to this node 
+	node->mem_size = parent->mem_size/2; //more stuff here too
+	node->status = status;
+	node->stack_pointer = stackPointer;
   
 // Initialize left and right children as NULL 
 node->left = NULL; 
@@ -67,7 +69,14 @@ void setup( int malloc_type, int mem_size, void* start_of_memory )
 
 void *buddy(int size)
 {
-
+//	int *error =-1
+	if (size > glob_mem_size) {return NULL;}//returns negative 1
+	
+	// do log calculation to find what power of 2 its closest two
+	int power = (log(size))/ (log(2));
+	printf("POWER IS %d \n", power);
+	// if the head of the tree is too big, split it into two
+	// repeat until it has a space thats the right size for it
 }
 
 void *slab(int size)
@@ -91,7 +100,7 @@ void *my_malloc( int size )
 	//local variables
 	void *allocated_address;
         printf("%d",allocated_address);
-    	allocated_address = sbrk(size);
+ //   	allocated_address = sbrk(size);
     	printf("%d",allocated_address);
     	if(*((int*)allocated_address) == -1){printf("%s", "allocation error when sbrk was used");}
 }
