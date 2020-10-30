@@ -127,7 +127,7 @@ void allocating_space(struct node* parent, int space, int *offset)
 { 
 	if (parent == NULL)			//we didnt find an appropriate space, offset is -1
 	{
-		*offset = -1
+		*offset = -1;
 		return;
 	}
 	else if (space == parent->mem_size) 		//space found, the offset is given
@@ -138,11 +138,11 @@ void allocating_space(struct node* parent, int space, int *offset)
 	else
 	{
 		/* first recur on left child */
-    	allocating_space(parent->left, &offset); 
+    	allocating_space(parent->left, space, offset); 
 		if (*offset > 0)							//indicates that we have found an offset so no furter recursive calls are needed
 		{
 			/* now recur on right child */
-    		allocating_space(parent->right, &offset); 
+    		allocating_space(parent->right, space, offset); 
 		}
 		return;
     	
@@ -173,8 +173,8 @@ void *buddy(int size)
 	if (size > glob_mem_size) {return (void*)-1 ;}//returns negative 1
 	
 	// do log calculation to find what power of 2 its closest two
-	int power = (log(size))/ (log(2));
-	printf("POWER IS %d \n", power);
+	//int power = (log(size))/ (log(2));
+	//printf("POWER IS %d \n", power);
 	int alocation_size = glob_mem_size;
 	int space_found = 1;
 	struct node *temp = buddy_tree;	//potential bug!!!!!!!
@@ -197,7 +197,7 @@ void *buddy(int size)
 		else if (temp->status == FREE && temp->mem_size != alocation_size)
 		{
 			split(temp);				
-			buddy_tree = *temp; 		//potential bug
+			buddy_tree = temp; 		//potential bug
 			temp = temp->left;
 		}
 
