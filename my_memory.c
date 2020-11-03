@@ -186,10 +186,6 @@ void *buddy(int size)
 {
 //	int *error =-1
 	if (size > glob_mem_size) {return (void*)-1 ;}//returns negative 1
-	
-	// do log calculation to find what power of 2 its closest two
-	int power = (log(size))/ (log(2));
-	printf("POWER IS %d \n", power);
 	//local variable
 	//int power = (log(size))/ (log(2));
 	//printf("POWER IS %d \n", power);
