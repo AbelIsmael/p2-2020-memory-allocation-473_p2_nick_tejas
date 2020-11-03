@@ -264,22 +264,15 @@ void dfs_free(struct node* parent, int pointer, int* freed)
 		dfs_free(parent->left,pointer,freed);
 		if(*freed =1) 
 		{
-			if(parent->left->status == FREE && parent->right->status ==FREE)
-			{
-				combine(parent);
-				parent->status=FREE;
-			}
-			//combine if both children are free
+			combine(parent);
 			return;
 		} // if a node was found start backing up;
+		
 		dfs_free(parent->right,pointer,freed);
 		if(*freed =1)
 		{
-			if(parent->left->status ==FREE && parent->right->status==FREE)
-			{
-				combine(parent);
-				parent->status=FREE;
-			}
+		
+			combine(parent);
 			return;
 		}
 	}
