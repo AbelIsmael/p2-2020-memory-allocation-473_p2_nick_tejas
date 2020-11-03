@@ -130,9 +130,10 @@ void allocating_space(struct node* parent, int space, int *offset)
 		//*offset = -1;
 		return;
 	}
-	else if (space == parent->mem_size) 		//space found, the offset is given
+	else if (space == parent->mem_size && parent->status == FREE ) 		//space found, the offset is given
 	{
        		 *offset = parent->offset;
+		parent->status = OCCUPIED;
 		return; 
 	}
 	else if (parent->status == FREE)
@@ -154,7 +155,7 @@ void allocating_space(struct node* parent, int space, int *offset)
 	{
 		/* first recur on left child */
     	allocating_space(parent->left, space, offset); 
-		if (*offset > -1)							//indicates that we have found an offset so no furter recursive calls are needed
+		if (*offset <0)							//indicates that we have found an offset so no furter recursive calls are needed
 		{
 			/* now recur on right child */
     		allocating_space(parent->right, space, offset); 
@@ -204,9 +205,9 @@ void *buddy(int size)
 	allocating_space(buddy_tree, alocation_size, &offset);
 	
 
-	printf("OFFSET = %d \n",offset);	
+	//printf("OFFSET = %d \n",offset);	
 	
-	return (void*)(offset+ glob_start_of_memory);
+	return (void*)(offset+ glob_start_of_memory +4);
 }
 
 void *slab(int size)
