@@ -127,12 +127,12 @@ void allocating_space(struct node* parent, int space, int *offset)
 { 
 	if (parent == NULL || parent->mem_size == 1024)			//we didnt find an appropriate space, offset is -1
 	{
-		*offset = -1;
+		//*offset = -1;
 		return;
 	}
 	else if (space == parent->mem_size) 		//space found, the offset is given
 	{
-        *offset = parent->offset;
+       		 *offset = parent->offset;
 		return; 
 	}
 	else if (parent->status == FREE)
@@ -141,12 +141,12 @@ void allocating_space(struct node* parent, int space, int *offset)
 
 		/* first recur on left child */
     		allocating_space(parent->left,space, offset); 
-		if (*offset > 0)							//indicates that we have found an offset so no furter recursive calls are needed
-		{
+		//if (*offset > 0)							//indicates that we have found an offset so no furter recursive calls are needed
+		//{
 			/* now recur on right child */
-			printf("SHOULD NOT HAVE GOTTEN IN HERE");
-    		allocating_space(parent->right,space, offset); 
-		}
+		//	printf("SHOULD NOT HAVE GOTTEN IN HERE");
+    		//allocating_space(parent->right,space, offset); 
+		//}
 		return;
 	}
 	
@@ -154,7 +154,7 @@ void allocating_space(struct node* parent, int space, int *offset)
 	{
 		/* first recur on left child */
     	allocating_space(parent->left, space, offset); 
-		if (*offset > 0)							//indicates that we have found an offset so no furter recursive calls are needed
+		if (*offset > -1)							//indicates that we have found an offset so no furter recursive calls are needed
 		{
 			/* now recur on right child */
     		allocating_space(parent->right, space, offset); 
@@ -203,7 +203,10 @@ void *buddy(int size)
 	// repeat until it has a space thats the right size for it
 	allocating_space(buddy_tree, alocation_size, &offset);
 	
-	return (void*)(offset + glob_start_of_memory);
+
+	printf("OFFSET = %d \n",offset);	
+	
+	return (void*)(offset+ glob_start_of_memory);
 }
 
 void *slab(int size)
@@ -221,7 +224,7 @@ void *slab(int size)
 
 void *my_malloc( int size )
 {
-	if( glob_malloc_type == 0) {buddy(size);}
+	if( glob_malloc_type == 0) {return buddy(size);}
 	else {slab(size);}
 
 	//local variables
