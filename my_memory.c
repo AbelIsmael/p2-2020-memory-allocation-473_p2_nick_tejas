@@ -196,7 +196,7 @@ void *buddy(int size)
 	int alocation_size = glob_mem_size;
 	int offset =-1;
 
-	while (size+4 < alocation_size)
+	while (size+4 < alocation_size && alocation_size > 512 )
 	{
 		alocation_size = alocation_size >> 1;	//finds the power of 2 that is smaller that size
 	}
@@ -205,7 +205,9 @@ void *buddy(int size)
 	
 	// if the head of the tree is too big, split it into two
 	// repeat until it has a space thats the right size for it
+			 
 	allocating_space(buddy_tree, alocation_size, &offset);
+
 	
 
 	//printf("OFFSET = %d \n",offset);	
