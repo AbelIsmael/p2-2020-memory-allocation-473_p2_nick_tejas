@@ -125,7 +125,7 @@ int combine(struct node *parent)	//only happens if the previous status was free
 /* Given a binary tree, print its nodes in inorder*/
 void allocating_space(struct node* parent, int space, int *offset) 
 { 
-	if (parent == NULL)			//we didnt find an appropriate space, offset is -1
+	if (parent == NULL || parent->mem_size == 1024)			//we didnt find an appropriate space, offset is -1
 	{
 		*offset = -1
 		return;
@@ -135,6 +135,21 @@ void allocating_space(struct node* parent, int space, int *offset)
         *offset = parent->offset;
 		return; 
 	}
+	else if (parent->status == FREE)
+	{
+		split(parent);
+
+		/* first recur on left child */
+    	allocating_space(parent->left, &offset); 
+		if (*offset > 0)							//indicates that we have found an offset so no furter recursive calls are needed
+		{
+			/* now recur on right child */
+			printf("SHOULD NOT HAVE GOTTEN IN HERE")
+    		allocating_space(parent->right, &offset); 
+		}
+		return;
+	}
+	
 	else
 	{
 		/* first recur on left child */
@@ -175,9 +190,10 @@ void *buddy(int size)
 	// do log calculation to find what power of 2 its closest two
 	int power = (log(size))/ (log(2));
 	printf("POWER IS %d \n", power);
+	//local variable
 	int alocation_size = glob_mem_size;
-	int space_found = 1;
-	struct node *temp = buddy_tree;	//potential bug!!!!!!!
+	int offset
+
 	while (size+4 < alocation_size)
 	{
 		alocation_size = alocation_size >> 1;	//finds the power of 2 that is smaller that size
@@ -187,22 +203,9 @@ void *buddy(int size)
 	
 	// if the head of the tree is too big, split it into two
 	// repeat until it has a space thats the right size for it
-	while(space_found != 0)
-	{
-		//split until we have the right memblock
-		if(temp->status == SPLIT)
-		{
-			
-		}
-		else if (temp->status == FREE && temp->mem_size != alocation_size)
-		{
-			split(temp);				
-			buddy_tree = *temp; 		//potential bug
-			temp = temp->left;
-		}
-
-
-	}
+	allocating_space(&buddy_tree, alocation_size, &offset);
+	
+	return offset;
 }
 
 void *slab(int size)
