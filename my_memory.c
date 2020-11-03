@@ -258,6 +258,7 @@ void *my_malloc( int size )
 
 void my_free( void *ptr )
 {
-	printf("the ptr value is: %d\n", (int)ptr);
+	int *x= (int*)(ptr - glob_start_of_memory)-1;
+	printf("the ptr value is: %d\n", x);
 	//free(mylifeaway)
 }
