@@ -123,6 +123,15 @@ int combine(struct node *parent)	//only happens if the previous status was free
 }
 
 /* Given a binary tree, print its nodes in inorder*/
+////////////////////////////////////////////////////////////////////////////
+//
+// Function     : setup
+// Description  : initialize the memory allocation system
+//
+// Inputs       : malloc_type - the type of memory allocation method to be used [0..3] where
+//                (0) Buddy System
+//                (1) Slab Allocation
+
 void allocating_space(struct node* parent, int space, int *offset) 
 { 
 	if (parent == NULL)			//we didnt find an appropriate space, offset is -1
@@ -249,5 +258,6 @@ void *my_malloc( int size )
 
 void my_free( void *ptr )
 {
+	printf("the ptr value is: %d\n", (int)ptr);
 	//free(mylifeaway)
 }
