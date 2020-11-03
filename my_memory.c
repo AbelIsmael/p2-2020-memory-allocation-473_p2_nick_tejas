@@ -248,6 +248,44 @@ void *my_malloc( int size )
     	//if(*((int*)allocated_address) == -1){printf("%s", "allocation error when sbrk was used");}
 }
 
+void dfs_free(struct node* parent, int pointer, int* freed)
+{
+	//printf("MADE INTO DFSFREE pointer == %d\n",pointer);
+	if(parent == NULL){return;} //if its nothing return
+
+	else if( parent->offset == pointer) //if the nodes offset is equal to the pointer free the node and update freed
+	{
+		parent->status=FREE;
+		*freed = 1;
+		return;
+	}
+	else if(parent->status == SPLIT) //if the node is split keep exploring
+	{
+		dfs_free(parent->left,pointer,freed);
+		if(*freed =1) 
+		{
+			if(parent->left->status == FREE && parent->right->status ==FREE)
+			{
+				combine(parent);
+				parent->status=FREE;
+			}
+			//combine if both children are free
+			return;
+		} // if a node was found start backing up;
+		dfs_free(parent->right,pointer,freed);
+		if(*freed =1)
+		{
+			if(parent->left->status ==FREE && parent->right->status==FREE)
+			{
+				combine(parent);
+				parent->status=FREE;
+			}
+			return;
+		}
+	}
+	return;
+}
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // Function     : my_free
@@ -258,7 +296,10 @@ void *my_malloc( int size )
 
 void my_free( void *ptr )
 {
-	int *x= (int*)(ptr - glob_start_of_memory)-1;
-	printf("the ptr value is: %d\n", x);
+	int pointer= (int)(ptr - glob_start_of_memory);
+	pointer = pointer -4;
+	//printf("the ptr value is: %d\n", pointer);
 	//free(mylifeaway)
+	int freed = 0;
+	dfs_free(buddy_tree,pointer,&freed);
 }
