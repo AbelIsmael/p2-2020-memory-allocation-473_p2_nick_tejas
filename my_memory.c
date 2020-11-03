@@ -140,12 +140,12 @@ void allocating_space(struct node* parent, int space, int *offset)
 		split(parent);
 
 		/* first recur on left child */
-    	allocating_space(parent->left, &offset); 
+    		allocating_space(parent->left,space, offset); 
 		if (*offset > 0)							//indicates that we have found an offset so no furter recursive calls are needed
 		{
 			/* now recur on right child */
-			printf("SHOULD NOT HAVE GOTTEN IN HERE")
-    		allocating_space(parent->right, &offset); 
+			printf("SHOULD NOT HAVE GOTTEN IN HERE");
+    		allocating_space(parent->right,space, offset); 
 		}
 		return;
 	}
@@ -190,7 +190,7 @@ void *buddy(int size)
 	//int power = (log(size))/ (log(2));
 	//printf("POWER IS %d \n", power);
 	int alocation_size = glob_mem_size;
-	int offset
+	int offset =-1;
 
 	while (size+4 < alocation_size)
 	{
@@ -201,9 +201,9 @@ void *buddy(int size)
 	
 	// if the head of the tree is too big, split it into two
 	// repeat until it has a space thats the right size for it
-	allocating_space(&buddy_tree, alocation_size, &offset);
+	allocating_space(buddy_tree, alocation_size, &offset);
 	
-	return offset;
+	return (void*)(offset + glob_start_of_memory);
 }
 
 void *slab(int size)
