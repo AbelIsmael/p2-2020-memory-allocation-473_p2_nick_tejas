@@ -125,23 +125,23 @@ int combine(struct node *parent)	//only happens if the previous status was free
 /* Given a binary tree, print its nodes in inorder*/
 void allocating_space(struct node* parent, int space, int *offset) 
 { 
-	if (parent == NULL || parent->mem_size == 1024)			//we didnt find an appropriate space, offset is -1
+	if (parent == NULL)			//we didnt find an appropriate space, offset is -1
 	{
-		//*offset = -1;
+		*offset = -1;
 		return;
 	}
 	else if (space == parent->mem_size && parent->status == FREE ) 		//space found, the offset is given
 	{
-       		 *offset = parent->offset;
+       	*offset = parent->offset;
 		parent->status = OCCUPIED;
 		return; 
 	}
-	else if (parent->status == FREE)
+	else if (parent->status == FREE && parent->mem_size > 1024)			//ensures we dont split under 1Kb 
 	{
 		split(parent);
 
 		/* first recur on left child */
-    		allocating_space(parent->left,space, offset); 
+    	allocating_space(parent->left,space, offset); 
 		//if (*offset > 0)							//indicates that we have found an offset so no furter recursive calls are needed
 		//{
 			/* now recur on right child */
@@ -150,7 +150,10 @@ void allocating_space(struct node* parent, int space, int *offset)
 		//}
 		return;
 	}
-	
+	else if(parent->status == OCCUPIED)
+	{
+		return;
+	}
 	else
 	{
 		/* first recur on left child */
