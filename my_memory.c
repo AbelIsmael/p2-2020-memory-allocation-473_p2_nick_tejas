@@ -127,7 +127,7 @@ void allocating_space(struct node* parent, int space, int *offset)
 { 
 	if (parent == NULL || parent->mem_size == 1024)			//we didnt find an appropriate space, offset is -1
 	{
-		*offset = -1
+		*offset = -1;
 		return;
 	}
 	else if (space == parent->mem_size) 		//space found, the offset is given
@@ -153,11 +153,11 @@ void allocating_space(struct node* parent, int space, int *offset)
 	else
 	{
 		/* first recur on left child */
-    	allocating_space(parent->left, &offset); 
+    	allocating_space(parent->left, space, offset); 
 		if (*offset > 0)							//indicates that we have found an offset so no furter recursive calls are needed
 		{
 			/* now recur on right child */
-    		allocating_space(parent->right, &offset); 
+    		allocating_space(parent->right, space, offset); 
 		}
 		return;
     	
@@ -191,6 +191,8 @@ void *buddy(int size)
 	int power = (log(size))/ (log(2));
 	printf("POWER IS %d \n", power);
 	//local variable
+	//int power = (log(size))/ (log(2));
+	//printf("POWER IS %d \n", power);
 	int alocation_size = glob_mem_size;
 	int offset
 
