@@ -225,11 +225,11 @@ void *my_malloc( int size )
 	else {slab(size);}
 
 	//local variables
-	void *allocated_address;
-        printf("%d",allocated_address);
+	//void *allocated_address;
+        //printf("%d",allocated_address);
  //   	allocated_address = sbrk(size);
-    	printf("%d",allocated_address);
-    	if(*((int*)allocated_address) == -1){printf("%s", "allocation error when sbrk was used");}
+    	//printf("%d",allocated_address);
+    	//if(*((int*)allocated_address) == -1){printf("%s", "allocation error when sbrk was used");}
 }
 
 ////////////////////////////////////////////////////////////////////////////
