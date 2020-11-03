@@ -208,10 +208,8 @@ void *buddy(int size)
 			 
 	allocating_space(buddy_tree, alocation_size, &offset);
 
-	
-
+	if (offset == -1){ return (void*)-1;}
 	//printf("OFFSET = %d \n",offset);	
-	
 	return (void*)(offset+ glob_start_of_memory +4);
 }
 
