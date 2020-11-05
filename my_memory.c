@@ -269,7 +269,7 @@ void dfs_free(struct node* parent, int pointer, int* freed)
 		} // if a node was found start backing up;
 		
 		dfs_free(parent->right,pointer,freed);
-		if(*freed =1)
+		if(*freed == 1)
 		{
 		
 			combine(parent);
