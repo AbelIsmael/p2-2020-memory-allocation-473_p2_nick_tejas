@@ -112,6 +112,8 @@ int combine(struct node *parent)	//only happens if the previous status was free
 		{
 			free(parent->left);
 			free(parent->right);
+			parent->left = NULL;
+			parent->right = NULL;
 			parent->status = FREE;
 			return 0;
 		}
@@ -262,7 +264,7 @@ void dfs_free(struct node* parent, int pointer, int* freed)
 	else if(parent->status == SPLIT) //if the node is split keep exploring
 	{
 		dfs_free(parent->left,pointer,freed);
-		if(*freed =1) 
+		if(*freed == 1) 
 		{
 			combine(parent);
 			return;
