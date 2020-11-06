@@ -338,7 +338,7 @@ void *slab_it(int size)
 	if(slab_descripter == NULL)
 	{
 		slab_descripter = newSlab(size);
-		allocated = (void*)((int) (buddy(slab_descripter->size)) + 4);
+		allocated = buddy(slab_descripter->size) + 4;
 		if(allocated ==(void*) -1){
 			slab_descripter = NULL;
 			//return allocated
