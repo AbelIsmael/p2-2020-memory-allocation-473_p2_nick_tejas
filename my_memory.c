@@ -372,7 +372,7 @@ void *slab_it(int size)
 		}
 
 		//we went through the table and didnt find the appropriate size
-		if(updated == 0 && i => 0)
+		if(updated == 0 && i >= 0)
 		{
 			temp = slab_descripter;
 			while(temp->next != NULL)
