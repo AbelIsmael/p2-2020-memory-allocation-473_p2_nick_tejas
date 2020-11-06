@@ -363,7 +363,8 @@ void *slab_it(int size)
 					}
 
 					temp->status = FULL;	//this only happens when break is not called in the if statement, this means that everything in this slab is 1 aka occupied
-				}	
+				}
+				break;	
 			}
 			temp = temp->next;
 		}
