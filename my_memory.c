@@ -324,7 +324,17 @@ void dfs_free(struct node* parent, int pointer, int* freed)
 	}
 	return;
 }
+void buddy_free(void *ptr)
+{
+	int pointer = (int)(ptr-glob_start_of_memory);
+	pointer = pointer -4;
+	int freed = 0;
+	dfs_free(buddy_tree,pointer,&freed);	
+}
+void slab_free(void *ptr)
+{
 
+}
 ////////////////////////////////////////////////////////////////////////////
 //
 // Function     : my_free
@@ -332,13 +342,15 @@ void dfs_free(struct node* parent, int pointer, int* freed)
 //
 // Inputs       : ptr - pointer to the memory segment to be free'd
 // Outputs      :
-
 void my_free( void *ptr )
 {
-	int pointer= (int)(ptr - glob_start_of_memory);
-	pointer = pointer -4;
+	if(glob_malloc_type ==0) {buddy_free(ptr);}
+	else {slab_free(ptr);}
+
+//	int pointer= (int)(ptr - glob_start_of_memory);
+//	pointer = pointer -4;
 	//printf("the ptr value is: %d\n", pointer);
 	//free(mylifeaway)
-	int freed = 0;
-	dfs_free(buddy_tree,pointer,&freed);
+//	int freed = 0;
+//	dfs_free(buddy_tree,pointer,&freed);
 }
