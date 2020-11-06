@@ -23,6 +23,26 @@ enum status
     OCCUPIED = 2,   //the space has mem allocated
 };
 
+enum slab_status
+{
+	PARTIAL = 0,
+	EMPTY = 1,
+	FULL = 2,
+};
+
+//struct for slab 
+struct slab
+{
+	int type;								//type means what mem size will be held in this slab for example: 600kb, 500kb
+	int offset;								//tracks the slab's offset
+	int status;								//tells us if the slab is filled, free, or partial
+	int max_object; 						//how many types this slab can hold
+	int used;								//the number of object it is currently using
+	int size;								//total size of the slab
+	int slab_pointer[N_OBJS_PER_SLAB]; 		//the binary array that tells us which object is containted where
+	struct slab *next;
+};
+
 //node implementation for the binary tree
 struct node
 {
@@ -34,10 +54,45 @@ struct node
 };
 
 struct node *buddy_tree;
+struct slab *slab_descripter;			//potential bug!!!
 
 
-/* newNode() allocates a new node with the given data and NULL left and  
-right pointers. */
+////////////////////////////////////////////////////////////////////////////
+//
+// Function     : split
+// Description  : splits the parent node's mem size into 2 child nodes
+//
+// Inputs       : malloc_type - the type of memory allocation method to be used [0..3] where
+//                
+
+struct slab* newSlab(int typeSize)
+{
+	// Allocate memory for new node  
+	struct slab* slab = (struct slab*)malloc(sizeof(struct slab)); 
+  
+	slab->type = typeSize;
+	slab->status = FREE;
+	slab->max_object = N_OBJS_PER_SLAB;
+	slab->used = 0;
+	slab->size = (typeSize+4)*N_OBJS_PER_SLAB + 4;
+	slab->offset += 8;
+	for(int i = 0; i < N_OBJS_PER_SLAB; i += 1)
+	{
+		slab->slab_pointer[i] = 0;
+	}
+	
+	slab->next = NULL;
+	return(slab); 
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+// Function     : newNode
+// Description  :  allocates a new node with the given data and NULL left and right pointers.
+//
+// Inputs       : mem
+//                
+
 struct node* newNode(int memSize, int status, int offset, struct node *parent)//change parameters later 
 { 
 	// Allocate memory for new node  
@@ -110,10 +165,9 @@ int combine(struct node *parent)	//only happens if the previous status was free
 	{
 		if(parent->left->status == FREE && parent->right->status == FREE)
 		{
-			free(parent->left);
-			free(parent->right);
-			parent->left = NULL;
-			parent->right = NULL;
+			
+			parent->left=NULL;
+			parent->right=NULL;
 			parent->status = FREE;
 			return 0;
 		}
@@ -134,7 +188,7 @@ int combine(struct node *parent)	//only happens if the previous status was free
 //                (0) Buddy System
 //                (1) Slab Allocation
 
-void allocating_space(struct node* parent, int space, int *offset) 
+void allocating_split(struct node* parent, int space, int *offset) 
 { 
 	if (parent == NULL)			//we didnt find an appropriate space, offset is -1
 	{
@@ -152,12 +206,12 @@ void allocating_space(struct node* parent, int space, int *offset)
 		split(parent);
 
 		/* first recur on left child */
-    	allocating_space(parent->left,space, offset); 
+    	allocating_split(parent->left,space, offset); 
 		//if (*offset > 0)							//indicates that we have found an offset so no furter recursive calls are needed
 		//{
 			/* now recur on right child */
 		//	printf("SHOULD NOT HAVE GOTTEN IN HERE");
-    		//allocating_space(parent->right,space, offset); 
+    		//allocating_split(parent->right,space, offset); 
 		//}
 		return;
 	}
@@ -168,17 +222,57 @@ void allocating_space(struct node* parent, int space, int *offset)
 	else
 	{
 		/* first recur on left child */
-    	allocating_space(parent->left, space, offset); 
+    	allocating_split(parent->left, space, offset); 
 		if (*offset <0)							//indicates that we have found an offset so no furter recursive calls are needed
 		{
 			/* now recur on right child */
-    		allocating_space(parent->right, space, offset); 
+    		allocating_split(parent->right, space, offset); 
 		}
 		return;
     	
 	}   
 } 
- 
+
+////////////////////////////////////////////////////////////////////////////
+//
+// Function     : setup
+// Description  : initialize the memory allocation system
+//
+// Inputs       : malloc_type - the type of memory allocation method to be used [0..3] where
+//                (0) Buddy System
+//                (1) Slab Allocation
+
+void allocation_search(struct node* parent, int space, int *offset) 
+{ 
+	if (parent == NULL)			//we didnt find an appropriate space, offset is -1
+	{
+		*offset = -1;
+		return;
+	}
+	else if (space == parent->mem_size && parent->status == FREE ) 		//space found, the offset is given
+	{
+       	*offset = parent->offset;
+		parent->status = OCCUPIED;
+		return; 
+	}
+	else if(parent->status == OCCUPIED)
+	{
+		return;
+	}
+	else
+	{
+		/* first recur on left child */
+    		allocation_search(parent->left, space, offset); 
+		if (*offset < 0)							//indicates that we have found an offset so no furter recursive calls are needed
+		{
+			/* now recur on right child */
+    		allocation_search(parent->right, space, offset); 
+		}
+		return;
+    	
+	}   
+} 
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // Function     : setup
@@ -204,29 +298,98 @@ void *buddy(int size)
 	//local variable
 	//int power = (log(size))/ (log(2));
 	//printf("POWER IS %d \n", power);
-	int alocation_size = glob_mem_size;
+	int allocation_size = glob_mem_size;
 	int offset =-1;
 
-	while (size+4 < alocation_size && alocation_size > 512 )
+	while (size+4 < allocation_size && allocation_size > 512 )
 	{
-		alocation_size = alocation_size >> 1;	//finds the power of 2 that is smaller that size
+		allocation_size = allocation_size >> 1;	//finds the power of 2 that is smaller that size
 	}
 
-	alocation_size = alocation_size <<1;		//this is to find the smallest size that is of power of 2 and is still enough to hold all bytes
+	allocation_size = allocation_size <<1;		//this is to find the smallest size that is of power of 2 and is still enough to hold all bytes
 	
 	// if the head of the tree is too big, split it into two
 	// repeat until it has a space thats the right size for it
-			 
-	allocating_space(buddy_tree, alocation_size, &offset);
+	
+	allocation_search(buddy_tree, allocation_size, &offset);			//this call attempts to allocate a block without spliting exisitng ones
 
+	if(offset == -1)
+	{
+		allocating_split(buddy_tree, allocation_size, &offset);			//this call attempts to allocate a block by spliting free blocks
+	}
+	
 	if (offset == -1){ return (void*)-1;}
 	//printf("OFFSET = %d \n",offset);	
 	return (void*)(offset+ glob_start_of_memory +4);
 }
 
-void *slab(int size)
+void *slab_it(int size)
 {
+	//local var
+	struct slab *temp = slab_descripter;
+	void *allocated;
+	int updated = 0;
+	//first check if we have a slab, then check if its free 
+	//if its full call buddy and send the slab
+	//second if we dont have that type or if we have one and is full, then make a new one
+	
 
+	if(slab_descripter == NULL)
+	{
+		slab_descripter = newSlab(size);
+		allocated = buddy(slab_descripter->size);
+		if(allocated ==(void*) -1){
+			slab_descripter = NULL;
+			//return allocated
+		}
+		return allocated;
+	}
+	else
+	{
+		while(temp->next != NULL)
+		{
+			if(temp->type == size && temp->status != FULL)
+			{
+				//allocate if we can or make a new one 
+				for(int i = 0; i <N_OBJS_PER_SLAB; i++)
+				{
+					if(temp->slab_pointer[i] == 0)
+					{
+						temp->slab_pointer[i] = 1;
+						updated = 1;
+						temp->status=PARTIAL;
+						break;
+					}
+
+					temp->status = FULL;	//this only happens when break is not called in the if statement, this means that everything in this slab is 1 aka occupied
+				}	
+			}
+			temp = temp->next;
+		}
+
+		//we went through the table and didnt find the appropriate size
+		if(updated == 0)
+		{
+			temp = slab_descripter;
+			while(temp->next != NULL)
+			{
+				temp = temp->next;
+			}
+			temp->next = newSlab(size);
+			allocated = buddy(temp->size);
+			if (allocated == (void*)-1)
+			{
+				temp->next=NULL;
+				return allocated;
+			}
+			else
+			{
+				temp->next->offset = ((int)(allocated - glob_start_of_memory)) + 4;
+			}
+			
+		}
+	}
+	
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -240,7 +403,7 @@ void *slab(int size)
 void *my_malloc( int size )
 {
 	if( glob_malloc_type == 0) {return buddy(size);}
-	else {slab(size);}
+	else {slab_it(size);}
 
 	//local variables
 	//void *allocated_address;
@@ -255,7 +418,7 @@ void dfs_free(struct node* parent, int pointer, int* freed)
 	//printf("MADE INTO DFSFREE pointer == %d\n",pointer);
 	if(parent == NULL){return;} //if its nothing return
 
-	else if( parent->offset == pointer) //if the nodes offset is equal to the pointer free the node and update freed
+	else if( parent->offset == pointer && parent->status == OCCUPIED) //if the nodes offset is equal to the pointer free the node and update freed
 	{
 		parent->status=FREE;
 		*freed = 1;
@@ -280,7 +443,34 @@ void dfs_free(struct node* parent, int pointer, int* freed)
 	}
 	return;
 }
+////////////////////////////////////////////////////////////////////////////
+//
+// Function     : buddy_free
+// Description  : deallocated the memory segment being passed by the pointer using buddy system
+//
+// Inputs       : ptr - pointer to the memory segment to be free'd
+// Outputs
 
+void buddy_free(void *ptr)
+{
+	int pointer = (int)(ptr-glob_start_of_memory);
+	pointer = pointer -4;
+	int freed = 0;
+	dfs_free(buddy_tree,pointer,&freed);	
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+// Function     : buddy_free
+// Description  : deallocated the memory segment being passed by the pointer using buddy system
+//
+// Inputs       : ptr - pointer to the memory segment to be free'd
+// Outputs
+
+void slab_free(void *ptr)
+{
+
+}
 ////////////////////////////////////////////////////////////////////////////
 //
 // Function     : my_free
@@ -288,13 +478,9 @@ void dfs_free(struct node* parent, int pointer, int* freed)
 //
 // Inputs       : ptr - pointer to the memory segment to be free'd
 // Outputs      :
-
 void my_free( void *ptr )
 {
-	int pointer= (int)(ptr - glob_start_of_memory);
-	pointer = pointer -4;
-	//printf("the ptr value is: %d\n", pointer);
-	//free(mylifeaway)
-	int freed = 0;
-	dfs_free(buddy_tree,pointer,&freed);
+	if(glob_malloc_type ==0) {buddy_free(ptr);}
+	else {slab_free(ptr);}
+
 }
