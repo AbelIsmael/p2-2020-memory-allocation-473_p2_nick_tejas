@@ -26,7 +26,7 @@ enum status
 enum slab_status
 {
 	PARTIAL = 0,
-	FREE = 1,
+	EMPTY = 1,
 	FULL = 2,
 };
 
@@ -76,7 +76,7 @@ struct slab* newSlab(int typeSize)
 	slab->used = 0;
 	slab->size = (typeSize+4)*N_OBJS_PER_SLAB + 4;
 	slab->offset += 8;
-	for(i = 0; i < N_OBJS_PER_SLAB; i += 1;)
+	for(int i = 0; i < N_OBJS_PER_SLAB; i += 1)
 	{
 		slab->slab_pointer[i] = 0;
 	}
@@ -336,7 +336,7 @@ void *slab_it(int size)
 
 	if(slab_descripter == NULL)
 	{
-		slab_descripter = newSlab(size)
+		slab_descripter = newSlab(size);
 
 	}
 	else
@@ -352,6 +352,7 @@ void *slab_it(int size)
 					{
 						temp->slab_pointer[i] = 1;
 						updated = 1;
+						temp->status=PARTIAL;
 						break;
 					}
 
@@ -397,7 +398,7 @@ void *slab_it(int size)
 void *my_malloc( int size )
 {
 	if( glob_malloc_type == 0) {return buddy(size);}
-	else {slab(size);}
+	else {slab_it(size);}
 
 	//local variables
 	//void *allocated_address;
