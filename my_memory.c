@@ -132,7 +132,7 @@ int combine(struct node *parent)	//only happens if the previous status was free
 //                (0) Buddy System
 //                (1) Slab Allocation
 
-void allocating_space(struct node* parent, int space, int *offset) 
+void allocating_split(struct node* parent, int space, int *offset) 
 { 
 	if (parent == NULL)			//we didnt find an appropriate space, offset is -1
 	{
@@ -150,12 +150,12 @@ void allocating_space(struct node* parent, int space, int *offset)
 		split(parent);
 
 		/* first recur on left child */
-    	allocating_space(parent->left,space, offset); 
+    	allocating_split(parent->left,space, offset); 
 		//if (*offset > 0)							//indicates that we have found an offset so no furter recursive calls are needed
 		//{
 			/* now recur on right child */
 		//	printf("SHOULD NOT HAVE GOTTEN IN HERE");
-    		//allocating_space(parent->right,space, offset); 
+    		//allocating_split(parent->right,space, offset); 
 		//}
 		return;
 	}
@@ -166,17 +166,57 @@ void allocating_space(struct node* parent, int space, int *offset)
 	else
 	{
 		/* first recur on left child */
-    	allocating_space(parent->left, space, offset); 
+    	allocating_split(parent->left, space, offset); 
 		if (*offset <0)							//indicates that we have found an offset so no furter recursive calls are needed
 		{
 			/* now recur on right child */
-    		allocating_space(parent->right, space, offset); 
+    		allocating_split(parent->right, space, offset); 
 		}
 		return;
     	
 	}   
 } 
- 
+
+////////////////////////////////////////////////////////////////////////////
+//
+// Function     : setup
+// Description  : initialize the memory allocation system
+//
+// Inputs       : malloc_type - the type of memory allocation method to be used [0..3] where
+//                (0) Buddy System
+//                (1) Slab Allocation
+
+void allocation_search(struct node* parent, int space, int *offset) 
+{ 
+	if (parent == NULL)			//we didnt find an appropriate space, offset is -1
+	{
+		*offset = -1;
+		return;
+	}
+	else if (space == parent->mem_size && parent->status == FREE ) 		//space found, the offset is given
+	{
+       	*offset = parent->offset;
+		parent->status = OCCUPIED;
+		return; 
+	}
+	else if(parent->status == OCCUPIED)
+	{
+		return;
+	}
+	else
+	{
+		/* first recur on left child */
+    	allocating_split(parent->left, space, offset); 
+		if (*offset < 0)							//indicates that we have found an offset so no furter recursive calls are needed
+		{
+			/* now recur on right child */
+    		allocating_split(parent->right, space, offset); 
+		}
+		return;
+    	
+	}   
+} 
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // Function     : setup
@@ -202,21 +242,26 @@ void *buddy(int size)
 	//local variable
 	//int power = (log(size))/ (log(2));
 	//printf("POWER IS %d \n", power);
-	int alocation_size = glob_mem_size;
+	int allocation_size = glob_mem_size;
 	int offset =-1;
 
-	while (size+4 < alocation_size && alocation_size > 512 )
+	while (size+4 < allocation_size && allocation_size > 512 )
 	{
-		alocation_size = alocation_size >> 1;	//finds the power of 2 that is smaller that size
+		allocation_size = allocation_size >> 1;	//finds the power of 2 that is smaller that size
 	}
 
-	alocation_size = alocation_size <<1;		//this is to find the smallest size that is of power of 2 and is still enough to hold all bytes
+	allocation_size = allocation_size <<1;		//this is to find the smallest size that is of power of 2 and is still enough to hold all bytes
 	
 	// if the head of the tree is too big, split it into two
 	// repeat until it has a space thats the right size for it
-			 
-	allocating_space(buddy_tree, alocation_size, &offset);
+	
+	allocation_search(buddy_tree, allocation_size, &offset);			//this call attempts to allocate a block without spliting exisitng ones
 
+	if(offset == -1)
+	{
+		allocating_split(buddy_tree, allocation_size, &offset);			//this call attempts to allocate a block by spliting free blocks
+	}
+	
 	if (offset == -1){ return (void*)-1;}
 	//printf("OFFSET = %d \n",offset);	
 	return (void*)(offset+ glob_start_of_memory +4);
@@ -262,14 +307,14 @@ void dfs_free(struct node* parent, int pointer, int* freed)
 	else if(parent->status == SPLIT) //if the node is split keep exploring
 	{
 		dfs_free(parent->left,pointer,freed);
-		if(*freed =1) 
+		if(*freed == 1) 
 		{
 			combine(parent);
 			return;
 		} // if a node was found start backing up;
 		
 		dfs_free(parent->right,pointer,freed);
-		if(*freed =1)
+		if(*freed == 1)
 		{
 		
 			combine(parent);
