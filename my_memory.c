@@ -102,7 +102,6 @@ int split(struct node *parent)	//only happens if the previous status was free
 //				: -1 if combine was called on a parent without a SPLIT status
 int combine(struct node *parent)	//only happens if the previous status was free
 {
-	printf("IN COMBINE\n");
 	if(parent->status != SPLIT)
 	{
 		return -1;
@@ -303,7 +302,6 @@ void dfs_free(struct node* parent, int pointer, int* freed)
 	{
 		parent->status=FREE;
 		*freed = 1;
-		printf("SETS FREED TO 1\n");
 		return;
 	}
 	else if(parent->status == SPLIT) //if the node is split keep exploring
