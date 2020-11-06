@@ -329,6 +329,7 @@ void *slab_it(int size)
 	struct slab *temp = slab_descripter;
 	void *allocated;
 	int updated = 0;
+	int i;
 	//first check if we have a slab, then check if its free 
 	//if its full call buddy and send the slab
 	//second if we dont have that type or if we have one and is full, then make a new one
@@ -337,7 +338,7 @@ void *slab_it(int size)
 	if(slab_descripter == NULL)
 	{
 		slab_descripter = newSlab(size);
-		allocated = buddy(slab_descripter->size);
+		allocated = buddy(slab_descripter->size) + (void*)1;
 		if(allocated ==(void*) -1){
 			slab_descripter = NULL;
 			//return allocated
@@ -346,12 +347,12 @@ void *slab_it(int size)
 	}
 	else
 	{
-		while(temp->next != NULL)
+		while(temp != NULL)
 		{
 			if(temp->type == size && temp->status != FULL)
 			{
 				//allocate if we can or make a new one 
-				for(int i = 0; i <N_OBJS_PER_SLAB; i++)
+				for(i = 0; i <N_OBJS_PER_SLAB; i++)
 				{
 					if(temp->slab_pointer[i] == 0)
 					{
@@ -368,7 +369,7 @@ void *slab_it(int size)
 		}
 
 		//we went through the table and didnt find the appropriate size
-		if(updated == 0)
+		if(updated == 0 && i => 0)
 		{
 			temp = slab_descripter;
 			while(temp->next != NULL)
@@ -386,7 +387,6 @@ void *slab_it(int size)
 			{
 				temp->next->offset = ((int)(allocated - glob_start_of_memory)) + 4;
 			}
-			
 		}
 	}
 	
