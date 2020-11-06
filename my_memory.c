@@ -343,6 +343,7 @@ void *slab_it(int size)
 			slab_descripter = NULL;
 			//return allocated
 		}
+		slab_descripter->slab_pointer[0]=1;
 		slab_descripter->offset = (int)(allocated - glob_start_of_memory);
 		return allocated;
 	}
@@ -360,7 +361,8 @@ void *slab_it(int size)
 						temp->slab_pointer[i] = 1;
 						updated = 1;
 						temp->status=PARTIAL;
-						allocated = (void*)(temp->offset + glob_start_of_memory+(size*i) + 4);
+						//printf("ALLOCATED INTO EXISTING SLAB\n");
+						allocated= (void*)(temp->offset + glob_start_of_memory+(size*i) + 4);
 						break;
 					}
 
@@ -392,6 +394,7 @@ void *slab_it(int size)
 			}
 		}
 	}
+	return allocated;
 	
 }
 
