@@ -110,8 +110,9 @@ int combine(struct node *parent)	//only happens if the previous status was free
 	{
 		if(parent->left->status == FREE && parent->right->status == FREE)
 		{
-			free(parent->left);
-			free(parent->right);
+			
+			parent->left=NULL;
+			parent->right=NULL;
 			parent->status = FREE;
 			return 0;
 		}
@@ -206,11 +207,11 @@ void allocation_search(struct node* parent, int space, int *offset)
 	else
 	{
 		/* first recur on left child */
-    	allocating_split(parent->left, space, offset); 
+    		allocation_search(parent->left, space, offset); 
 		if (*offset < 0)							//indicates that we have found an offset so no furter recursive calls are needed
 		{
 			/* now recur on right child */
-    		allocating_split(parent->right, space, offset); 
+    		allocation_search(parent->right, space, offset); 
 		}
 		return;
     	
