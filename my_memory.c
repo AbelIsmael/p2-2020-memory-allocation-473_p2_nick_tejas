@@ -338,11 +338,12 @@ void *slab_it(int size)
 	if(slab_descripter == NULL)
 	{
 		slab_descripter = newSlab(size);
-		allocated = buddy(slab_descripter->size) + (void*)1;
+		allocated = buddy(slab_descripter->size);
 		if(allocated ==(void*) -1){
 			slab_descripter = NULL;
 			//return allocated
 		}
+		slab_descripter->offset = (int)(allocated - glob_start_of_memory);
 		return allocated;
 	}
 	else
@@ -359,6 +360,7 @@ void *slab_it(int size)
 						temp->slab_pointer[i] = 1;
 						updated = 1;
 						temp->status=PARTIAL;
+						allocated = 
 						break;
 					}
 
