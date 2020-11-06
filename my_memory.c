@@ -360,7 +360,7 @@ void *slab_it(int size)
 						temp->slab_pointer[i] = 1;
 						updated = 1;
 						temp->status=PARTIAL;
-						allocated = 
+						allocated = (void*)(temp->offset + glob_start_of_memory);
 						break;
 					}
 
