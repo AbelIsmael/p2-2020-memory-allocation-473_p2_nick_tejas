@@ -491,7 +491,7 @@ void slab_free(void *ptr)
 			printf("SLAB FOUND\n");
 			for(i = 0; i < N_OBJS_PER_SLAB; i++)
 			{
-				if(pointer == temp->offset+(temp->type *i))
+				if(pointer == temp->offset+((temp->type+4) *i))
 				{
 					printf("UPDATES SLABPOINTER\n");
 					temp->used -= 1;
