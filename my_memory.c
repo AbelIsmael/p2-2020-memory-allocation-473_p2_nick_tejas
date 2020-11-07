@@ -330,14 +330,28 @@ void *slab_it(int size)
 	void *allocated;
 	int updated = 0;
 	int i;
+	int space_used = 0;
 	//first check if we have a slab, then check if its free 
 	//if its full call buddy and send the slab
 	//second if we dont have that type or if we have one and is full, then make a new one
 	
-	if(size * N_OBJS_PER_SLAB > glob_mem_size)
+	//if(size * N_OBJS_PER_SLAB > glob_mem_size)
+	//{
+	//	return (void*)(-1);
+	//}
+
+	//makes sure we are not trying to allocate more space than we can when the new size request comes
+	while (temp != NULL)
 	{
-		return (void*)(-1);
+		space_used += temp->size;
+		if(space_used > glob_mem_size)
+		{
+			return (void*)(-1);
+		}
 	}
+	
+	temp = slab_descripter;
+
 	if(slab_descripter == NULL)
 	{
 		slab_descripter = newSlab(size);
