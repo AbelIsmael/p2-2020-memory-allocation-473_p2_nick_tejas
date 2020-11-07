@@ -329,46 +329,77 @@ void *slab_it(int size)
 	struct slab *temp = slab_descripter;
 	void *allocated;
 	int updated = 0;
+	int i;
+	int space_used = 0;
 	//first check if we have a slab, then check if its free 
 	//if its full call buddy and send the slab
 	//second if we dont have that type or if we have one and is full, then make a new one
 	
+	if(size * N_OBJS_PER_SLAB > glob_mem_size)
+	{
+		return (void*)(-1);
+	}
+
+	//makes sure we are not trying to allocate more space than we can when the new size request comes
+	while (temp != NULL)
+	{
+		space_used += temp->size;
+		if(space_used + (size * N_OBJS_PER_SLAB)  > glob_mem_size)
+		{
+			return (void*)(-1);
+		}
+		temp = temp->next;
+	}
+	
+	temp = slab_descripter;
 
 	if(slab_descripter == NULL)
 	{
 		slab_descripter = newSlab(size);
+		slab_descripter->used = 1;
 		allocated = buddy(slab_descripter->size);
 		if(allocated ==(void*) -1){
 			slab_descripter = NULL;
-			//return allocated
+			return allocated;
 		}
+		else
+		{
+			allocated += 4;
+		}
+		
+		slab_descripter->slab_pointer[0]=1;
+		slab_descripter->offset = (int)(allocated - glob_start_of_memory);
 		return allocated;
 	}
 	else
 	{
-		while(temp->next != NULL)
+		while(temp != NULL)
 		{
 			if(temp->type == size && temp->status != FULL)
 			{
 				//allocate if we can or make a new one 
-				for(int i = 0; i <N_OBJS_PER_SLAB; i++)
+				for(i = 0; i <N_OBJS_PER_SLAB; i++)
 				{
 					if(temp->slab_pointer[i] == 0)
 					{
 						temp->slab_pointer[i] = 1;
 						updated = 1;
-						temp->status=PARTIAL;
+						temp->used += 1;
+						temp->status = PARTIAL;
+						//printf("ALLOCATED INTO EXISTING SLAB\n");
+						allocated= (void*)(temp->offset + glob_start_of_memory+(size*i) + (i*4));
 						break;
 					}
 
 					temp->status = FULL;	//this only happens when break is not called in the if statement, this means that everything in this slab is 1 aka occupied
-				}	
+				}
+				break;	
 			}
 			temp = temp->next;
 		}
 
 		//we went through the table and didnt find the appropriate size
-		if(updated == 0)
+		if(updated == 0 && i >= 0)
 		{
 			temp = slab_descripter;
 			while(temp->next != NULL)
@@ -376,7 +407,10 @@ void *slab_it(int size)
 				temp = temp->next;
 			}
 			temp->next = newSlab(size);
-			allocated = buddy(temp->size);
+			temp->next->slab_pointer[0]=1;
+			temp->next->used = 1;
+			allocated = buddy(temp->next->size);
+
 			if (allocated == (void*)-1)
 			{
 				temp->next=NULL;
@@ -384,11 +418,12 @@ void *slab_it(int size)
 			}
 			else
 			{
-				temp->next->offset = ((int)(allocated - glob_start_of_memory)) + 4;
+				allocated += 4;
+				temp->next->offset = ((int)(allocated - glob_start_of_memory));// + 4;
 			}
-			
 		}
 	}
+	return allocated;
 	
 }
 
@@ -469,7 +504,39 @@ void buddy_free(void *ptr)
 
 void slab_free(void *ptr)
 {
-
+	int pointer = (int)(ptr-glob_start_of_memory);
+	//pointer = pointer -4;
+	struct slab *temp = slab_descripter;
+	int i = -1;
+	while(temp!=NULL)
+	{
+		if(pointer >= temp->offset && pointer < temp->offset + temp->size)
+		{
+			//printf("SLAB FOUND\n");
+			for(i = 0; i < N_OBJS_PER_SLAB; i++)
+			{
+				if(pointer == temp->offset+((temp->type+4) *i))
+				{
+					temp->used -= 1;
+					temp->slab_pointer[i]=0;
+					if(temp->status == FULL)
+					{
+						temp->status = PARTIAL;
+					}
+					break;
+				}
+			}
+			
+			if(temp->used == 0)
+			{
+				//printf("FREE IS CALLED \n");
+				buddy_free((void*)(temp->offset  + (glob_start_of_memory)-4));
+			}
+			break;
+		}
+		temp=temp->next;
+	}
+		
 }
 ////////////////////////////////////////////////////////////////////////////
 //
