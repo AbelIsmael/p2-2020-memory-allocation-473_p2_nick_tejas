@@ -477,7 +477,44 @@ void buddy_free(void *ptr)
 
 void slab_free(void *ptr)
 {
-
+	int pointer = (int)(ptr-glob_start_of_memory);
+	pointer = pointer -4;
+	struct slab *temp = slab_descripter;
+	int i = -1;
+	int j = -1;
+	int isempty = 1;
+	while(temp!=NULL)
+	{
+		if(pointer >= temp->offset && pointer < temp->offset + temp->size)
+		{
+			printf("SLAB FOUND\n");
+			for(i = 0; i < N_OBJS_PER_SLAB; i++)
+			{
+				if(pointer == temp->offset+(temp->type *i))
+				{
+					printf("UPDATES SLABPOINTER\n");
+					temp->slab_pointer[i]=0;
+					if(temp->status == FULL)
+					{
+						temp->status = PARTIAL;
+					}
+				}
+				if(temp->slab_pointer[i]==1)
+				{
+					isempty = 0;
+					printf("SLAB IS\n");
+				}
+			}
+			if(isempty == 1)
+			{
+				printf("FREE IS CALLED \n");
+				buddy_free((void*)(temp->offset  + (glob_start_of_memory)+4));
+			}
+			break;
+		}
+		temp=temp->next;
+	}
+		
 }
 ////////////////////////////////////////////////////////////////////////////
 //
