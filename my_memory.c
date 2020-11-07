@@ -481,7 +481,7 @@ void buddy_free(void *ptr)
 void slab_free(void *ptr)
 {
 	int pointer = (int)(ptr-glob_start_of_memory);
-	pointer = pointer -4;
+	//pointer = pointer -4;
 	struct slab *temp = slab_descripter;
 	int i = -1;
 	while(temp!=NULL)
