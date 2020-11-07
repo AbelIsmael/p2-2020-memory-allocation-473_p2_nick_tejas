@@ -348,6 +348,7 @@ void *slab_it(int size)
 		{
 			return (void*)(-1);
 		}
+		temp = temp->next;
 	}
 	
 	temp = slab_descripter;
