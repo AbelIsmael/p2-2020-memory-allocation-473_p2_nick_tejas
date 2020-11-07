@@ -488,12 +488,11 @@ void slab_free(void *ptr)
 	{
 		if(pointer >= temp->offset && pointer < temp->offset + temp->size)
 		{
-			printf("SLAB FOUND\n");
+			//printf("SLAB FOUND\n");
 			for(i = 0; i < N_OBJS_PER_SLAB; i++)
 			{
 				if(pointer == temp->offset+((temp->type+4) *i))
 				{
-					printf("UPDATES SLABPOINTER\n");
 					temp->used -= 1;
 					temp->slab_pointer[i]=0;
 					if(temp->status == FULL)
@@ -506,8 +505,8 @@ void slab_free(void *ptr)
 			
 			if(temp->used == 0)
 			{
-				printf("FREE IS CALLED \n");
-				buddy_free((void*)(temp->offset  + (glob_start_of_memory)+4));
+				//printf("FREE IS CALLED \n");
+				buddy_free((void*)(temp->offset  + (glob_start_of_memory)-4));
 			}
 			break;
 		}
