@@ -334,7 +334,10 @@ void *slab_it(int size)
 	//if its full call buddy and send the slab
 	//second if we dont have that type or if we have one and is full, then make a new one
 	
-
+	if(size * N_OBJS_PER_SLAB > glob_mem_size)
+	{
+		return (void*)(-1);
+	}
 	if(slab_descripter == NULL)
 	{
 		slab_descripter = newSlab(size);
