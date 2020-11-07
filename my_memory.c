@@ -362,7 +362,7 @@ void *slab_it(int size)
 						updated = 1;
 						temp->status=PARTIAL;
 						//printf("ALLOCATED INTO EXISTING SLAB\n");
-						allocated= (void*)(temp->offset + glob_start_of_memory+(size*i) + 4);
+						allocated= (void*)(temp->offset + glob_start_of_memory+(size*i) + (i*4));
 						break;
 					}
 
@@ -382,7 +382,9 @@ void *slab_it(int size)
 				temp = temp->next;
 			}
 			temp->next = newSlab(size);
-			allocated = buddy(temp->size);
+			temp->next->slab_pointer[0]=1;
+			allocated = buddy(temp->next->size)+4;
+
 			if (allocated == (void*)-1)
 			{
 				temp->next=NULL;
@@ -390,7 +392,7 @@ void *slab_it(int size)
 			}
 			else
 			{
-				temp->next->offset = ((int)(allocated - glob_start_of_memory)) + 4;
+				temp->next->offset = ((int)(allocated - glob_start_of_memory));// + 4;
 			}
 		}
 	}
