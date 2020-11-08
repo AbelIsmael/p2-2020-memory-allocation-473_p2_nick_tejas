@@ -46,24 +46,25 @@ struct slab
 //node implementation for the binary tree
 struct node
 {
-	int mem_size;
-    int status;
-	int offset;
-    struct node *left;
-    struct node *right;
+	int mem_size;							//describes the max mem this paticular node can hold
+    int status;								//holds the status of the node: SPLIT, FREE, or OCCUPIED
+	int offset;								//holds the offest of this node that will be added to the starting address
+    struct node *left;						//allows us to make binary tree
+    struct node *right;						//allows us to make binary tree
 };
 
+//global data structures that keep track of the allocation
 struct node *buddy_tree;
-struct slab *slab_descripter;			//potential bug!!!
+struct slab *slab_descripter;			
 
 
-////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Function     : split
-// Description  : splits the parent node's mem size into 2 child nodes
+// Function     : newSlab
+// Description  : makes a new slab using the given size and can contain N_OBJS_PER_SLAB objects
 //
-// Inputs       : malloc_type - the type of memory allocation method to be used [0..3] where
-//                
+// Inputs       : typeSize - the data type size which we will make slabs out of
+// Outputs		: slab     - returns slab struct which has the new slab made and initialized 
 
 struct slab* newSlab(int typeSize)
 {
@@ -85,14 +86,18 @@ struct slab* newSlab(int typeSize)
 	return(slab); 
 }
 
-////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Function     : newNode
-// Description  :  allocates a new node with the given data and NULL left and right pointers.
+// Description  : allocates a new node with the given data and NULL left and right pointers.
 //
-// Inputs       : mem
-//                
-
+// Inputs       : memSize - the memory size of the node
+//				: status  - does nothing in the function, remove it if time permits
+//              : offset  - the offset of the new node, useful when calculating address
+//				: parent  - the parent or root node of the binary tree which helps initizles the new nodes
+//
+// Output       : node    - returns the new node that is made, becomes the new leaf node in the tree
+//
 struct node* newNode(int memSize, int status, int offset, struct node *parent)//change parameters later 
 { 
 	// Allocate memory for new node  
@@ -119,12 +124,12 @@ struct node* newNode(int memSize, int status, int offset, struct node *parent)//
 	return(node); 
 } 
 
-////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Function     : split
 // Description  : splits the parent node's mem size into 2 child nodes
 //
-// Inputs       : malloc_type - the type of memory allocation method to be used [0..3] where
+// Inputs       : parent - uses this node to change its status and make 2 child nodes
 //                
 
 int split(struct node *parent)	//only happens if the previous status was free
@@ -145,25 +150,30 @@ int split(struct node *parent)	//only happens if the previous status was free
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Function     : combine
-// Description  : splits the parent node's mem size into 2 child nodes
+// Description  : combines 2 empty leaf nodes back into the parent to have 
+//				  bigger memory size node available to be split/used
 //
-// Inputs       : node type - parent node which has the SPLIT status
+// Inputs       : node parent - shows which node we want to try to combine
 //                
 // Outputs		: 0 if the combine was successfull
 //				: 1 if the parent node does not have 2 free children 
 //				: -1 if combine was called on a parent without a SPLIT status
+
 int combine(struct node *parent)	//only happens if the previous status was free
 {
+	//if combine was called on a parent node which doesn't have the SPLIT status, it means the parent node does not have children and thus must be a leaf node
+	//we cannot combine leaf nodes, thus -1
 	if(parent->status != SPLIT)
 	{
 		return -1;
 	}
 	else
 	{
-		if(parent->left->status == FREE && parent->right->status == FREE)
+		//combine should only combine 2 free leaf/child nodes. combining non-free nodes leads to memory/allocation issues
+		if(parent->left->status == FREE && parent->right->status == FREE)		
 		{
 			
 			parent->left=NULL;
@@ -178,19 +188,20 @@ int combine(struct node *parent)	//only happens if the previous status was free
 	}
 }
 
-/* Given a binary tree, print its nodes in inorder*/
-////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Function     : setup
-// Description  : initialize the memory allocation system
+// Function     : allocating_split
+// Description  : tries to allocate space for the requested space, spliting bigger chunks if needed
 //
-// Inputs       : malloc_type - the type of memory allocation method to be used [0..3] where
-//                (0) Buddy System
-//                (1) Slab Allocation
+// Inputs       : parent - The binary tree data structure
+//                space  - the space buddy is trying to allocate in the mem
+//
+// Outputs		: offset - gives the proper offset required to calculated address if allocation is a succes
+//				: 		   sets offset to -1 if allocation could not happen
 
 void allocating_split(struct node* parent, int space, int *offset) 
 { 
-	if (parent == NULL)			//we didnt find an appropriate space, offset is -1
+	if (parent == NULL)													//we didnt find an appropriate space, offset is -1
 	{
 		*offset = -1;
 		return;
@@ -205,27 +216,21 @@ void allocating_split(struct node* parent, int space, int *offset)
 	{
 		split(parent);
 
-		/* first recur on left child */
+		//recursion only happens on the left node since the new node will obviously be free and that is the policy set in the assignment
     	allocating_split(parent->left,space, offset); 
-		//if (*offset > 0)							//indicates that we have found an offset so no furter recursive calls are needed
-		//{
-			/* now recur on right child */
-		//	printf("SHOULD NOT HAVE GOTTEN IN HERE");
-    		//allocating_split(parent->right,space, offset); 
-		//}
 		return;
 	}
-	else if(parent->status == OCCUPIED)
+	else if(parent->status == OCCUPIED)									//if a node is occupied we can not allocate it, as it is already allocated
 	{
 		return;
 	}
-	else
+	else																//allows a dfs traversal through the binary tree until the result is achieved
 	{
-		/* first recur on left child */
+		//first recursion on the left child as per policy set by the assignment
     	allocating_split(parent->left, space, offset); 
-		if (*offset <0)							//indicates that we have found an offset so no furter recursive calls are needed
+		if (*offset < 0)												//indicates that we have found an offset so no furter recursive calls are needed
 		{
-			/* now recur on right child */
+			//the left side of the tree failed to allocate, try the right side of the tree
     		allocating_split(parent->right, space, offset); 
 		}
 		return;
@@ -233,18 +238,21 @@ void allocating_split(struct node* parent, int space, int *offset)
 	}   
 } 
 
-////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Function     : setup
-// Description  : initialize the memory allocation system
+// Function     : allocation_search
+// Description  : similar to allocation_split, except tries to allocate 
+//				  without breaking chunks into 2 smaller ones
 //
-// Inputs       : malloc_type - the type of memory allocation method to be used [0..3] where
-//                (0) Buddy System
-//                (1) Slab Allocation
+// Inputs       : parent - The binary tree data structure
+//                space  - the space buddy is trying to allocate in the mem
+//
+// Outputs		: offset - gives the proper offset required to calculated address if allocation is a succes
+//				: 		   sets offset to -1 if allocation could not happen
 
 void allocation_search(struct node* parent, int space, int *offset) 
 { 
-	if (parent == NULL)			//we didnt find an appropriate space, offset is -1
+	if (parent == NULL)													//we didnt find an appropriate space, offset is -1
 	{
 		*offset = -1;
 		return;
@@ -255,17 +263,17 @@ void allocation_search(struct node* parent, int space, int *offset)
 		parent->status = OCCUPIED;
 		return; 
 	}
-	else if(parent->status == OCCUPIED)
+	else if(parent->status == OCCUPIED)									//if a node is occupied we can not allocate it, as it is already allocated
 	{
 		return;
 	}
-	else
+	else																//allows a dfs traversal through the binary tree until the result is achieved
 	{
-		/* first recur on left child */
-    		allocation_search(parent->left, space, offset); 
+		//first recursion on the left child as per policy set by the assignment
+    	allocation_search(parent->left, space, offset); 
 		if (*offset < 0)							//indicates that we have found an offset so no furter recursive calls are needed
 		{
-			/* now recur on right child */
+			//the left side of the tree failed to allocate, try the right side of the tree
     		allocation_search(parent->right, space, offset); 
 		}
 		return;
@@ -273,7 +281,7 @@ void allocation_search(struct node* parent, int space, int *offset)
 	}   
 } 
 
-////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Function     : setup
 // Description  : initialize the memory allocation system
@@ -290,23 +298,28 @@ void setup( int malloc_type, int mem_size, void* start_of_memory )
 	buddy_tree = newNode(glob_mem_size, FREE, 0, NULL);
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Function     : buddy
+// Description  : tries to allocate the given size using buddy system 
+//
+// Inputs       : size   - the size of bytes needed to be allocated
+//
+// Outputs		: the address at which the allocation exists
 
 void *buddy(int size)
 {
-//	int *error =-1
 	if (size > glob_mem_size) {return (void*)-1 ;}//returns negative 1
 	//local variable
-	//int power = (log(size))/ (log(2));
-	//printf("POWER IS %d \n", power);
 	int allocation_size = glob_mem_size;
 	int offset =-1;
 
 	while (size+4 < allocation_size && allocation_size > 512 )
 	{
-		allocation_size = allocation_size >> 1;	//finds the power of 2 that is smaller that size
+		allocation_size = allocation_size >> 1;							//finds the power of 2 that is smaller that size
 	}
 
-	allocation_size = allocation_size <<1;		//this is to find the smallest size that is of power of 2 and is still enough to hold all bytes
+	allocation_size = allocation_size <<1;								//this is to find the smallest size that is of power of 2 and is still enough to hold all bytes
 	
 	// if the head of the tree is too big, split it into two
 	// repeat until it has a space thats the right size for it
@@ -318,10 +331,18 @@ void *buddy(int size)
 		allocating_split(buddy_tree, allocation_size, &offset);			//this call attempts to allocate a block by spliting free blocks
 	}
 	
-	if (offset == -1){ return (void*)-1;}
-	//printf("OFFSET = %d \n",offset);	
+	if (offset == -1){ return (void*)-1;}								//failed to allocate a block
 	return (void*)(offset+ glob_start_of_memory +4);
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Function     : slab_it
+// Description  : tries to allocate the given size using slab allocation system 
+//
+// Inputs       : size   - the size of bytes needed to be allocated
+//
+// Outputs		: the address at which the allocation exists
 
 void *slab_it(int size)
 {
@@ -331,10 +352,12 @@ void *slab_it(int size)
 	int updated = 0;
 	int i;
 	int space_used = 0;
+
 	//first check if we have a slab, then check if its free 
 	//if its full call buddy and send the slab
 	//second if we dont have that type or if we have one and is full, then make a new one
 	
+	//makes sure the request is within the memory bound
 	if(size * N_OBJS_PER_SLAB > glob_mem_size)
 	{
 		return (void*)(-1);
@@ -351,8 +374,10 @@ void *slab_it(int size)
 		temp = temp->next;
 	}
 	
+	//rests for later calculations
 	temp = slab_descripter;
 
+	//this condition ensures that the empty slab descripter table is initizied properly
 	if(slab_descripter == NULL)
 	{
 		slab_descripter = newSlab(size);
@@ -371,7 +396,7 @@ void *slab_it(int size)
 		slab_descripter->offset = (int)(allocated - glob_start_of_memory);
 		return allocated;
 	}
-	else
+	else																		//goes through the table and tries to find the proper slab to put the request in
 	{
 		while(temp != NULL)
 		{
@@ -380,14 +405,13 @@ void *slab_it(int size)
 				//allocate if we can or make a new one 
 				for(i = 0; i <N_OBJS_PER_SLAB; i++)
 				{
-					if(temp->slab_pointer[i] == 0)
+					if(temp->slab_pointer[i] == 0)								//slab found, update the table 
 					{
 						temp->slab_pointer[i] = 1;
 						updated = 1;
 						temp->used += 1;
 						temp->status = PARTIAL;
-						//printf("ALLOCATED INTO EXISTING SLAB\n");
-						allocated= (void*)(temp->offset + glob_start_of_memory+(size*i) + (i*4));
+						allocated = (void*)(temp->offset + glob_start_of_memory+(size*i) + (i*4));
 						break;
 					}
 
@@ -406,12 +430,13 @@ void *slab_it(int size)
 			{
 				temp = temp->next;
 			}
+			//make a newSlab to allocate the requested size
 			temp->next = newSlab(size);
 			temp->next->slab_pointer[0]=1;
 			temp->next->used = 1;
 			allocated = buddy(temp->next->size);
 
-			if (allocated == (void*)-1)
+			if (allocated == (void*)-1)						//ensures we can allocate it
 			{
 				temp->next=NULL;
 				return allocated;
@@ -427,7 +452,7 @@ void *slab_it(int size)
 	
 }
 
-////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Function     : my_malloc
 // Description  : allocates memory segment using specified allocation algorithm
@@ -439,27 +464,30 @@ void *my_malloc( int size )
 {
 	if( glob_malloc_type == 0) {return buddy(size);}
 	else {slab_it(size);}
-
-	//local variables
-	//void *allocated_address;
-        //printf("%d",allocated_address);
- //   	allocated_address = sbrk(size);
-    	//printf("%d",allocated_address);
-    	//if(*((int*)allocated_address) == -1){printf("%s", "allocation error when sbrk was used");}
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Function     : dfs_free
+// Description  : goes through the binary tree to locate which node is being freed from mem 
+//
+// Inputs       : parent  - The binary tree data structure where allocation data is stored
+//                pointer - helps us find the right node which need to be freed
+//
+// Outputs		: freed   - (1)  if the node was found in the tree and was freed 
+//				: 		   	(-1) if freed was not succesfull
 
 void dfs_free(struct node* parent, int pointer, int* freed)
 {
-	//printf("MADE INTO DFSFREE pointer == %d\n",pointer);
-	if(parent == NULL){return;} //if its nothing return
+	if(parent == NULL){return;} 										//if its nothing return
 
-	else if( parent->offset == pointer && parent->status == OCCUPIED) //if the nodes offset is equal to the pointer free the node and update freed
+	else if( parent->offset == pointer && parent->status == OCCUPIED)	//if the nodes offset is equal to the pointer free the node and update freed
 	{
 		parent->status=FREE;
 		*freed = 1;
 		return;
 	}
-	else if(parent->status == SPLIT) //if the node is split keep exploring
+	else if(parent->status == SPLIT) 									//if the node is split keep exploring
 	{
 		dfs_free(parent->left,pointer,freed);
 		if(*freed == 1) 
@@ -471,14 +499,13 @@ void dfs_free(struct node* parent, int pointer, int* freed)
 		dfs_free(parent->right,pointer,freed);
 		if(*freed == 1)
 		{
-		
 			combine(parent);
 			return;
 		}
 	}
 	return;
 }
-////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Function     : buddy_free
 // Description  : deallocated the memory segment being passed by the pointer using buddy system
@@ -494,26 +521,29 @@ void buddy_free(void *ptr)
 	dfs_free(buddy_tree,pointer,&freed);	
 }
 
-////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Function     : buddy_free
-// Description  : deallocated the memory segment being passed by the pointer using buddy system
+// Function     : slab_free
+// Description  : deallocated the memory segment being passed by the pointer using slab allocation
 //
 // Inputs       : ptr - pointer to the memory segment to be free'd
 // Outputs
 
 void slab_free(void *ptr)
 {
+	//local vars
 	int pointer = (int)(ptr-glob_start_of_memory);
-	//pointer = pointer -4;
+	int i = -1;
 	struct slab *temp = slab_descripter;
 	struct slab *temp2 = slab_descripter;
-	int i = -1;
-	while(temp!=NULL)
+
+	//loops through the slab tablse to find the area where the space was allocated
+	while(temp!=NULL)														
 	{
+		//the deallocation will only happen if the pointer is within the slab type offset
 		if(pointer >= temp->offset && pointer < temp->offset + temp->size)
 		{
-			//printf("SLAB FOUND\n");
+			//loops through the binary list to update the deallocation changes 
 			for(i = 0; i < N_OBJS_PER_SLAB; i++)
 			{
 				if(pointer == temp->offset+((temp->type+4) *i))
@@ -528,9 +558,9 @@ void slab_free(void *ptr)
 				}
 			}
 			
+			//we want to remove the entire slab if we just deallocated the last object, meaning its not holding any info
 			if(temp->used == 0)
 			{
-				
 				buddy_free((void*)(temp->offset  + (glob_start_of_memory)-4));
 				if(temp->next ==NULL) //if only one slab, empty table;
 				{
@@ -559,7 +589,7 @@ void slab_free(void *ptr)
 	}
 		
 }
-////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Function     : my_free
 // Description  : deallocated the memory segment being passed by the pointer
