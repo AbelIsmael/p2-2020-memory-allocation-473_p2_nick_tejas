@@ -507,6 +507,7 @@ void slab_free(void *ptr)
 	int pointer = (int)(ptr-glob_start_of_memory);
 	//pointer = pointer -4;
 	struct slab *temp = slab_descripter;
+	struct slab *temp2 = slab_descripter;
 	int i = -1;
 	while(temp!=NULL)
 	{
@@ -529,8 +530,28 @@ void slab_free(void *ptr)
 			
 			if(temp->used == 0)
 			{
-				//printf("FREE IS CALLED \n");
+				
 				buddy_free((void*)(temp->offset  + (glob_start_of_memory)-4));
+				if(temp->next ==NULL) //if only one slab, empty table;
+				{
+					temp=NULL;
+				}
+				else
+				{
+				
+					if(temp2->type = temp->type) //if the first slab needs to be removed
+					{
+						slab_descripter= slab_descripter->next;
+					}
+					else  //otherwise find the slab and remove it
+					{
+						while(temp2->type != temp->type)
+						{			
+							temp2= temp2->next;
+						} 
+						temp2->next = temp->next;
+					}
+				}
 			}
 			break;
 		}
