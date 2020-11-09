@@ -367,7 +367,11 @@ void *slab_it(int size)
 	while (temp != NULL)
 	{
 		space_used += temp->size;
-		if(space_used + (size * N_OBJS_PER_SLAB)  > glob_mem_size)
+		if (temp->type == size && temp->status != FULL)					//handles edge case and allows slab allocation of high type slabs
+		{
+			break;
+		}
+		else if(space_used + (size * N_OBJS_PER_SLAB)  > glob_mem_size)
 		{
 			return (void*)(-1);
 		}
